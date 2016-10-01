@@ -17,5 +17,9 @@
   "files_to_deploy": [ "package.json", "index.js", "config.json" ],
   "scripts": {
     "deploy": "dpl"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:MiniCodeMonkey/alexa-tesla-skill.git"
   }
 }

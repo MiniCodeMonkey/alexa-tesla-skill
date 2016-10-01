@@ -4,17 +4,6 @@ const util = require('util');
 const teslams = require('teslams');
 const fs = require('fs');
 
-try {
-    const jsonString = fs.readFileSync("./config.json").toString();
-    const config = JSON.parse(jsonString);
-    const creds = { 
-        email: config.username, 
-        password: config.password 
-    };
-} catch (err) {
-    throw new Error("The file 'config.json' does not exist or contains invalid arguments!");
-}
-
 // --------------- Helpers that build all of the responses -----------------------
 
 function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
@@ -66,6 +55,17 @@ function getWelcomeResponse(callback) {
 }
 
 function getStatusResponse(callback) {
+    try {
+        const jsonString = fs.readFileSync("./config.json").toString();
+        const config = JSON.parse(jsonString);
+        const creds = { 
+            email: config.username, 
+            password: config.password 
+        };
+    } catch (err) {
+        throw new Error("The file 'config.json' does not exist or contains invalid arguments!");
+    }
+    
     teslams.get_vid( { email: creds.email, password: creds.password }, function ( vid ) {
         if (vid == undefined) {
             console.log("Error: Undefined vehicle id");
