@@ -1,0 +1,14 @@
+MarvinStatusIntent status
+MarvinStatusIntent what's your status
+MarvinStatusIntent how is your charge
+MarvinStatusIntent how much battery
+MarvinStartHVACIntent start air condition
+MarvinStartHVACIntent start A C
+MarvinStartHVACIntent start cooling
+MarvinStartHVACIntent start heating
+MarvinStartHVACIntent start heater
+MarvinOpenPanoRoofIntent open roof
+MarvinOpenPanoRoofIntent open pano
+MarvinOpenPanoRoofIntent let the sun in
+MarvinClosePanoRoofIntent close roof
+MarvinClosePanoRoofIntent close pano

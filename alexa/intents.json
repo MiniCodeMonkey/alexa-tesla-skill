@@ -1,0 +1,22 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    },
+    {
+      "intent": "MarvinStatusIntent"
+    },
+    {
+      "intent": "MarvinStartHVACIntent"
+    },
+    {
+      "intent": "MarvinOpenPanoRoofIntent"
+    },
+    {
+      "intent": "MarvinClosePanoRoofIntent"
+    }
+  ]
+}
