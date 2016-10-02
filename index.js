@@ -4,6 +4,8 @@ const util = require('util');
 const teslams = require('teslams');
 const fs = require('fs');
 
+const config = JSON.parse(fs.readFileSync("./config.json").toString());
+
 // --------------- Helpers that build all of the responses -----------------------
 
 function buildSpeechletResponse(title, output, repromptText, shouldEndSession) {
@@ -55,18 +57,7 @@ function getWelcomeResponse(callback) {
 }
 
 function getStatusResponse(callback) {
-    try {
-        const jsonString = fs.readFileSync("./config.json").toString();
-        const config = JSON.parse(jsonString);
-        const creds = { 
-            email: config.username, 
-            password: config.password 
-        };
-    } catch (err) {
-        throw new Error("The file 'config.json' does not exist or contains invalid arguments!");
-    }
-    
-    teslams.get_vid( { email: creds.email, password: creds.password }, function ( vid ) {
+    teslams.get_vid( { email: config.username, password: config.password }, function ( vid ) {
         if (vid == undefined) {
             console.log("Error: Undefined vehicle id");
         } else {
@@ -79,15 +70,19 @@ function getStatusResponse(callback) {
             // get some info
             //
             // teslams.mobile_enabled( vid, pr );
-            teslams.get_charge_state(vid, response => {
-                console.log(response);
-                const sessionAttributes = {};
-                const cardTitle = 'Status';
-                const speechOutput = 'Battery is currently at ' + response.response.battery_level + '%';
-                const shouldEndSession = true;
+            
+            teslams.wake_up(vid, wakeUpResponse => {
+                console.log(wakeUpResponse);
+                teslams.get_charge_state(vid, chargeStateResponse => {
+                    console.log(chargeStateResponse);
+                    const sessionAttributes = {};
+                    const cardTitle = 'Status';
+                    const speechOutput = 'Battery is currently at ' + chargeStateResponse.battery_level + '%. You have ' + parseInt(chargeStateResponse.est_battery_range, 10) + ' miles of range left';
+                    const shouldEndSession = true;
 
-                callback(sessionAttributes,
-                    buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
+                    callback(sessionAttributes,
+                        buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
+                });
             });
             // teslams.get_climate_state( vid, pr );
             // teslams.get_drive_state( vid, pr );
@@ -122,66 +117,6 @@ function handleSessionEndRequest(callback) {
     callback({}, buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
 }
 
-function createFavoriteColorAttributes(favoriteColor) {
-    return {
-        favoriteColor,
-    };
-}
-
-/**
- * Sets the color in the session and prepares the speech to reply to the user.
- */
-function setColorInSession(intent, session, callback) {
-    const cardTitle = intent.name;
-    const favoriteColorSlot = intent.slots.Color;
-    let repromptText = '';
-    let sessionAttributes = {};
-    const shouldEndSession = false;
-    let speechOutput = '';
-
-    if (favoriteColorSlot) {
-        const favoriteColor = favoriteColorSlot.value;
-        sessionAttributes = createFavoriteColorAttributes(favoriteColor);
-        speechOutput = `I now know your favorite color is ${favoriteColor}. You can ask me ` +
-            "your favorite color by saying, what's my favorite color?";
-        repromptText = "You can ask me your favorite color by saying, what's my favorite color?";
-    } else {
-        speechOutput = "I'm not sure what your favorite color is. Please try again.";
-        repromptText = "I'm not sure what your favorite color is. You can tell me your " +
-            'favorite color by saying, my favorite color is red';
-    }
-
-    callback(sessionAttributes,
-         buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
-}
-
-function getColorFromSession(intent, session, callback) {
-    let favoriteColor;
-    const repromptText = null;
-    const sessionAttributes = {};
-    let shouldEndSession = false;
-    let speechOutput = '';
-
-    if (session.attributes) {
-        favoriteColor = session.attributes.favoriteColor;
-    }
-
-    if (favoriteColor) {
-        speechOutput = `Your favorite color is ${favoriteColor}. Goodbye.`;
-        shouldEndSession = true;
-    } else {
-        speechOutput = "I'm not sure what your favorite color is, you can say, my favorite color " +
-            ' is red';
-    }
-
-    // Setting repromptText to null signifies that we do not want to reprompt the user.
-    // If the user does not respond or says something that is not understood, the session
-    // will end.
-    callback(sessionAttributes,
-         buildSpeechletResponse(intent.name, speechOutput, repromptText, shouldEndSession));
-}
-
-
 // --------------- Events -----------------------
 
 /**
@@ -212,8 +147,6 @@ function onIntent(intentRequest, session, callback) {
 
     if (intentName === 'MarvinStatusIntent') {
         getStatusResponse(callback);
-    } else if (intentName === 'WhatsMyColorIntent') {
-        getColorFromSession(intent, session, callback);
     } else if (intentName === 'AMAZON.HelpIntent') {
         getWelcomeResponse(callback);
     } else if (intentName === 'AMAZON.StopIntent' || intentName === 'AMAZON.CancelIntent') {

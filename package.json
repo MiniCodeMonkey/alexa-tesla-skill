@@ -7,7 +7,7 @@
     "teslams": "^1.1.6"
   },
   "devDependencies": {
-    "dpl": "^3.7.0"
+    "dpl": "3.5.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
