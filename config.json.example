@@ -3,5 +3,6 @@
 	"stream_url": "https://streaming.vn.teslamotors.com/stream/",
 	"username": "yourMyTeslaLogin@email.com",
 	"password": "yourPassword",
-	"output_file": "stream_output.txt" 
+	"output_file": "stream_output.txt",
+	"alexa_app_id": "amzn1.echo-sdk-ams.app.[unique-value-here]"
 }

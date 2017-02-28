@@ -37,40 +37,11 @@ function buildResponse(sessionAttributes, speechletResponse) {
     };
 }
 
-
-// --------------- Functions that control the skill's behavior -----------------------
-
-function getWelcomeResponse(callback) {
-    // If we wanted to initialize the session to have some attributes we could add those here.
-    const sessionAttributes = {};
-    const cardTitle = 'Welcome';
-    const speechOutput = 'Welcome to the Alexa Skills Kit sample. ' +
-        'Please tell me your favorite color by saying, my favorite color is red';
-    // If the user either does not reply to the welcome message or says something that is not
-    // understood, they will be prompted again with this text.
-    const repromptText = 'Please tell me your favorite color by saying, ' +
-        'my favorite color is red';
-    const shouldEndSession = false;
-
-    callback(sessionAttributes,
-        buildSpeechletResponse(cardTitle, speechOutput, repromptText, shouldEndSession));
-}
-
 function getStatusResponse(callback) {
-    teslams.get_vid( { email: config.username, password: config.password }, function ( vid ) {
+    teslams.get_vid( { email: config.username, password: config.password }, function (vid) {
         if (vid == undefined) {
             console.log("Error: Undefined vehicle id");
         } else {
-            //
-            // Remember node.js is all async and non-blocking so any uncommented lines below will generate requests in parallel
-            // Uncomment too many lines at once and you will get yourself blocked by the Tesla DoS protection systems.
-            //
-            // teslams.wake_up( vid, pr );
-            //
-            // get some info
-            //
-            // teslams.mobile_enabled( vid, pr );
-            
             teslams.wake_up(vid, wakeUpResponse => {
                 console.log(wakeUpResponse);
                 teslams.get_charge_state(vid, chargeStateResponse => {
@@ -84,25 +55,29 @@ function getStatusResponse(callback) {
                         buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
                 });
             });
-            // teslams.get_climate_state( vid, pr );
-            // teslams.get_drive_state( vid, pr );
-            // teslams.get_vehicle_state( vid, pr );
-            // teslams.get_gui_settings( vid, pr );
-            //
-            // cute but annoying stuff while debugging
-            //
-            // teslams.flash( vid, pr ); 
-            // teslams.honk( vid, pr ); 
-            // teslams.open_charge_port( vid, pr ) 
-            //
-            // control some stuff
-            //
-            // teslams.door_lock( { id: vid, lock: "lock" }, pr );
-            // teslams.sun_roof( { id: vid, roof: "close" }, pr );
-            // teslams.auto_conditioning( { id: vid, climate: "off" }, pr ); 
-            // teslams.charge_range( { id: vid, range: "standard" }, pr ); 
-            // teslams.charge_state( { id: vid, charge: "on" }, pr ); 
-            // teslams.set_temperature( { id: vid, dtemp: 20 }, pr ); 
+        }
+      }
+    );
+}
+
+function getStartHVACResponse(callback) {
+    teslams.get_vid( { email: config.username, password: config.password }, function (vid) {
+        if (vid == undefined) {
+            console.log("Error: Undefined vehicle id");
+        } else {
+            teslams.wake_up(vid, wakeUpResponse => {
+                console.log(wakeUpResponse);
+                teslams.auto_conditioning( { id: vid, climate: "on" }, climateResponse => {
+                    console.log(climateResponse);
+                    const sessionAttributes = {};
+                    const cardTitle = 'A/C';
+                    const speechOutput = 'Marvin\'s air condition is now on. Sweet!';
+                    const shouldEndSession = true;
+
+                    callback(sessionAttributes,
+                        buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
+                });
+            });
         }
       }
     );
@@ -110,8 +85,7 @@ function getStatusResponse(callback) {
 
 function handleSessionEndRequest(callback) {
     const cardTitle = 'Session Ended';
-    const speechOutput = 'Thank you for trying the Alexa Skills Kit sample. Have a nice day!';
-    // Setting this to true ends the session and exits the skill.
+    const speechOutput = 'Bye bye!';
     const shouldEndSession = true;
 
     callback({}, buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
@@ -133,7 +107,11 @@ function onLaunch(launchRequest, session, callback) {
     console.log(`onLaunch requestId=${launchRequest.requestId}, sessionId=${session.sessionId}`);
 
     // Dispatch to your skill's launch.
-    getWelcomeResponse(callback);
+    const cardTitle = 'Session Ended';
+    const speechOutput = 'Hi there! You can ask me about the status of Marvin or start the A/C.';
+    const shouldEndSession = false;
+
+    callback({}, buildSpeechletResponse(cardTitle, speechOutput, null, shouldEndSession));
 }
 
 /**
@@ -147,6 +125,8 @@ function onIntent(intentRequest, session, callback) {
 
     if (intentName === 'MarvinStatusIntent') {
         getStatusResponse(callback);
+    } else if (intentName === 'MarvinStartHVACIntent') {
+        getStartHVACResponse(callback);
     } else if (intentName === 'AMAZON.HelpIntent') {
         getWelcomeResponse(callback);
     } else if (intentName === 'AMAZON.StopIntent' || intentName === 'AMAZON.CancelIntent') {
@@ -162,27 +142,15 @@ function onIntent(intentRequest, session, callback) {
  */
 function onSessionEnded(sessionEndedRequest, session) {
     console.log(`onSessionEnded requestId=${sessionEndedRequest.requestId}, sessionId=${session.sessionId}`);
-    // Add cleanup logic here
 }
 
-
-// --------------- Main handler -----------------------
-
-// Route the incoming request based on type (LaunchRequest, IntentRequest,
-// etc.) The JSON body of the request is provided in the event parameter.
 exports.handler = (event, context, callback) => {
     try {
         console.log(`event.session.application.applicationId=${event.session.application.applicationId}`);
 
-        /**
-         * Uncomment this if statement and populate with your skill's application ID to
-         * prevent someone else from configuring a skill that sends requests to this function.
-         */
-        /*
-        if (event.session.application.applicationId !== 'amzn1.echo-sdk-ams.app.[unique-value-here]') {
+        if (event.session.application.applicationId !== config.alexa_app_id) {
              callback('Invalid Application ID');
         }
-        */
 
         if (event.session.new) {
             onSessionStarted({ requestId: event.request.requestId }, event.session);
